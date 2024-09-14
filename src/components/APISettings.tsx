@@ -16,19 +16,26 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import LocalStorageStore from "@/classes/localStorageStore";
-import { ApiProviders } from "@/classes/apiProviders";
+import { ApiProviders, ApiModels } from "@/classes/apiProviders";
 
-const store = new LocalStorageStore("api-settings");
+const store = new LocalStorageStore("neko-api-settings");
 
 const APISettings = () => {
   const [open, setOpen] = useState(false);
   const [provider, setProvider] = useState(store.get("provider") || "");
+  const [model, setModel] = useState(store.get("model") || "");
   const [apiKey, setApiKey] = useState(store.get("apiKey") || "");
 
   useEffect(() => {
     store.set("provider", provider);
     store.set("apiKey", apiKey);
-  }, [provider, apiKey]);
+    store.set("model", model);
+  }, [provider, apiKey, model]);
+
+  useEffect(() => {
+    setModel(""); // Reset model when provider changes
+    setApiKey(""); // Reset API key when provider changes
+  }, [provider]);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -60,6 +67,25 @@ const APISettings = () => {
               </SelectContent>
             </Select>
           </div>
+
+          <div className="grid grid-cols-4 items-center gap-4">
+            <label htmlFor="model" className="text-right">
+              Model
+            </label>
+            <Select value={model} onValueChange={setModel}>
+              <SelectTrigger id="model" className="col-span-3">
+                <SelectValue placeholder="Select model" />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.values(ApiModels[provider as ApiProviders]).map((m) => (
+                  <SelectItem key={m.value} value={m.value}>
+                    {m.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           <div className="grid grid-cols-4 items-center gap-4">
             <label htmlFor="apiKey" className="text-right">
               API Key
