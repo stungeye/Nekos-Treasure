@@ -21,6 +21,7 @@ import { ApiProviders, ApiModels } from "@/classes/apiProviders";
 const store = new LocalStorageStore("neko-api-settings");
 
 const APISettings = () => {
+  // Dialog should start open if any of the settings are missing.
   const [open, setOpen] = useState(
     !store.get("provider") || !store.get("model") || !store.get("apiKey")
   );
@@ -28,12 +29,24 @@ const APISettings = () => {
   const [model, setModel] = useState(store.get("model") || "");
   const [apiKey, setApiKey] = useState(store.get("apiKey") || "");
 
-  useEffect(() => {
-    if (store.get("provider") !== provider) {
-      setModel(""); // Reset model when provider changes
-      setApiKey(""); // Reset API key when provider changes
+  const handleProviderChange = (newProvider: ApiProviders) => {
+    if (provider && newProvider !== provider && apiKey.trim() !== "") {
+      const confirmed = window.confirm(
+        "Changing provider will reset the API key. Continue?"
+      );
+      if (confirmed) {
+        setProvider(newProvider);
+        setModel("");
+        setApiKey("");
+      }
+    } else {
+      // If API key is empty, change provider without confirmation
+      setProvider(newProvider);
+      setModel("");
     }
+  };
 
+  useEffect(() => {
     store.set("provider", provider);
     store.set("apiKey", apiKey);
     store.set("model", model);
@@ -56,7 +69,7 @@ const APISettings = () => {
             <label htmlFor="provider" className="text-right">
               Provider
             </label>
-            <Select value={provider} onValueChange={setProvider}>
+            <Select value={provider} onValueChange={handleProviderChange}>
               <SelectTrigger id="provider" className="col-span-3">
                 <SelectValue placeholder="Select provider" />
               </SelectTrigger>
