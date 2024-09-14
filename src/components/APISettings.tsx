@@ -21,21 +21,23 @@ import { ApiProviders, ApiModels } from "@/classes/apiProviders";
 const store = new LocalStorageStore("neko-api-settings");
 
 const APISettings = () => {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(
+    !store.get("provider") || !store.get("model") || !store.get("apiKey")
+  );
   const [provider, setProvider] = useState(store.get("provider") || "");
   const [model, setModel] = useState(store.get("model") || "");
   const [apiKey, setApiKey] = useState(store.get("apiKey") || "");
 
   useEffect(() => {
+    if (store.get("provider") !== provider) {
+      setModel(""); // Reset model when provider changes
+      setApiKey(""); // Reset API key when provider changes
+    }
+
     store.set("provider", provider);
     store.set("apiKey", apiKey);
     store.set("model", model);
   }, [provider, apiKey, model]);
-
-  useEffect(() => {
-    setModel(""); // Reset model when provider changes
-    setApiKey(""); // Reset API key when provider changes
-  }, [provider]);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
