@@ -1,13 +1,10 @@
-import APISettings from "@/components/APISettings";
 import "./App.css";
+import GameUI from "./components/GameUI";
 
 function App() {
   return (
     <>
-      <nav className="flex justify-between items-center p-4 bg-gray-800 text-white">
-        <h1 className="text-2xl">Neko's Treasure</h1>
-        <APISettings />
-      </nav>
+      <GameUI />
     </>
   );
 }
