@@ -19,9 +19,11 @@ import LocalStorageStore from "@/classes/localStorageStore";
 import { ApiProviders, ApiModels } from "@/classes/apiProviders";
 
 const store = new LocalStorageStore("neko-api-settings");
+interface APISettingsProps {
+  onSettingsSave: () => void; // Callback to notify when settings are saved
+}
 
-const APISettings = () => {
-  // Dialog should start open if any of the settings are missing.
+const APISettings: React.FC<APISettingsProps> = ({ onSettingsSave }) => {
   const [open, setOpen] = useState(
     !store.get("provider") || !store.get("model") || !store.get("apiKey")
   );
@@ -40,18 +42,20 @@ const APISettings = () => {
         setApiKey("");
       }
     } else {
-      // If API key is empty, change provider without confirmation
       setProvider(newProvider);
       setModel("");
     }
   };
 
+  // Update the LocalStorageStore and trigger the onSettingsSave callback
   useEffect(() => {
     store.set("provider", provider);
     store.set("apiKey", apiKey);
     store.set("model", model);
-  }, [provider, apiKey, model]);
-
+    if (provider && model && apiKey) {
+      onSettingsSave(); // Notify that the settings have been saved
+    }
+  }, [provider, apiKey, model, onSettingsSave]);
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -92,11 +96,19 @@ const APISettings = () => {
                 <SelectValue placeholder="Select model" />
               </SelectTrigger>
               <SelectContent>
-                {Object.values(ApiModels[provider as ApiProviders]).map((m) => (
-                  <SelectItem key={m.value} value={m.value}>
-                    {m.name}
+                {provider && ApiModels[provider as ApiProviders] ? (
+                  Object.values(ApiModels[provider as ApiProviders]).map(
+                    (m) => (
+                      <SelectItem key={m.value} value={m.value}>
+                        {m.name}
+                      </SelectItem>
+                    )
+                  )
+                ) : (
+                  <SelectItem disabled key="none" value="none">
+                    Select a provider first
                   </SelectItem>
-                ))}
+                )}
               </SelectContent>
             </Select>
           </div>
