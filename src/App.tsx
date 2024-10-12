@@ -7,8 +7,8 @@ function App() {
   const [apiSettingsSet, setApiSettingsSet] = useState(false);
 
   // Function to update the state when API settings are saved
-  const handleSettingsSave = () => {
-    setApiSettingsSet(true);
+  const handleSettingsSave = (settingsComplete: boolean) => {
+    setApiSettingsSet(settingsComplete);
   };
 
   return (

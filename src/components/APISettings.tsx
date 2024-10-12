@@ -20,7 +20,8 @@ import { ApiProviders, ApiModels } from "@/classes/apiProviders";
 
 const store = new LocalStorageStore("neko-api-settings");
 interface APISettingsProps {
-  onSettingsSave: () => void; // Callback to notify when settings are saved
+  // onSettingsSave is a callback function that will be called when the settings are saved
+  onSettingsSave: (settingsComplete: boolean) => void;
 }
 
 const APISettings: React.FC<APISettingsProps> = ({ onSettingsSave }) => {
@@ -34,7 +35,7 @@ const APISettings: React.FC<APISettingsProps> = ({ onSettingsSave }) => {
   const handleProviderChange = (newProvider: ApiProviders) => {
     if (provider && newProvider !== provider && apiKey.trim() !== "") {
       const confirmed = window.confirm(
-        "Changing provider will reset the API key. Continue?"
+        "Changing provider will reset the API key and any on-going conversation. Continue?"
       );
       if (confirmed) {
         setProvider(newProvider);
@@ -53,9 +54,14 @@ const APISettings: React.FC<APISettingsProps> = ({ onSettingsSave }) => {
     store.set("apiKey", apiKey);
     store.set("model", model);
     if (provider && model && apiKey) {
-      onSettingsSave(); // Notify that the settings have been saved
+      console.log("Settings saved true");
+      onSettingsSave(true); // Notify that the settings have been saved
+    } else {
+      console.log("Settings saved false");
+      onSettingsSave(false); // Notify that the settings are incomplete
     }
   }, [provider, apiKey, model, onSettingsSave]);
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>

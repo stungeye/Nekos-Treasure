@@ -39,7 +39,12 @@ const GameUI: React.FC<GameUIProps> = ({ apiSettingsSet }) => {
   }, [isLoading]); // Focus input after loading is finished
 
   useEffect(() => {
-    if (!apiSettingsSet) return; // Don't initialize if API settings are not set
+    setMessages([]); // Clear messages when API settings are updated
+
+    if (!apiSettingsSet) {
+      setIsChatEnabled(false); // No chating if API settings are not set
+      return; // Don't initialize if API settings are not set
+    }
 
     setIsChatEnabled(true);
     const provider = store.get("provider");
@@ -121,14 +126,15 @@ const GameUI: React.FC<GameUIProps> = ({ apiSettingsSet }) => {
 
     if (provider && model && apiKey) {
       initChatModel();
-      handleSendMessage("Hello?");
+      handleSendMessage("Hello?", false);
     }
   }, [apiSettingsSet]); // Run only when apiSettingsSet changes
 
-  const handleSendMessage = async (msg = input) => {
+  const handleSendMessage = async (msg = input, addToMessages = true) => {
     if (msg.trim() && chatModelRef.current) {
       setIsLoading(true);
-      if (msg != "Hello?") {
+
+      if (addToMessages) {
         const userMessage = new HumanMessage(msg);
         setMessages((prevMessages) => [...prevMessages, userMessage]);
         setInput("");
