@@ -7,20 +7,30 @@ import ChatModel from "@/classes/chatModel";
 import { createLlm } from "@/classes/llmFactory";
 import LocalStorageStore from "@/classes/localStorageStore";
 import { AIMessage, BaseMessage, HumanMessage } from "@langchain/core/messages";
-import nekoImage from "../assets/neko.png"; // Import the image
+import { levelManager, LevelConfig } from "@/classes/levelConfig";
+import { parseLLMResponse } from "@/classes/llmResponseParser";
 
 interface GameUIProps {
   apiSettingsSet: boolean;
 }
 
 const GameUI: React.FC<GameUIProps> = ({ apiSettingsSet }) => {
+  // Component state:
   const [messages, setMessages] = useState<BaseMessage[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isChatEnabled, setIsChatEnabled] = useState(false); // Track whether chat is enabled
-  const chatModelRef = useRef<ChatModel | null>(null);
-  const sessionIdRef = useRef<string>(`user-${Date.now()}`);
+  const [currentLevelConfig, setCurrentLevelConfig] = useState<LevelConfig>(
+    levelManager.getCurrentLevelConfig()
+  );
+  const [secretWord, setSecretWord] = useState<string>("");
+  const [attemptsRemaining, setAttemptsRemaining] = useState(
+    currentLevelConfig.attempts
+  );
+
+  // Reference and local storage state:
   const store = new LocalStorageStore("neko-api-settings");
+  const chatModelRef = useRef<ChatModel | null>(null);
   const inputRef = useRef<HTMLInputElement>(null); // Create a ref for the input
   const scrollAreaRef = useRef<HTMLDivElement>(null); // Ref for the ScrollArea
 
@@ -38,6 +48,7 @@ const GameUI: React.FC<GameUIProps> = ({ apiSettingsSet }) => {
     }
   }, [isLoading]); // Focus input after loading is finished
 
+  // Initialize the chat model when API settings are set
   useEffect(() => {
     setMessages([]); // Clear messages when API settings are updated
 
@@ -50,109 +61,64 @@ const GameUI: React.FC<GameUIProps> = ({ apiSettingsSet }) => {
     const provider = store.get("provider");
     const model = store.get("model");
     const apiKey = store.get("apiKey");
-    // a fun and very diverse collection of 50 possible secret words
-    const possibleSecretWords = [
-      "cat",
-      "dog",
-      "bird",
-      "fish",
-      "rabbit",
-      "hamster",
-      "turtle",
-      "lizard",
-      "snake",
-      "frog",
-      "spider",
-      "ant",
-      "bee",
-      "wasp",
-      "beetle",
-      "butterfly",
-      "dragonfly",
-      "grasshopper",
-      "ladybug",
-      "firefly",
-      "snail",
-      "crab",
-      "lobster",
-      "apple",
-      "banana",
-      "orange",
-      "grape",
-      "strawberry",
-      "blueberry",
-      "raspberry",
-      "kiwi",
-      "pineapple",
-      "watermelon",
-      "peach",
-      "pear",
-      "cherry",
-      "coconut",
-      "pumpkin",
-      "witch",
-      "vampire",
-      "werewolf",
-      "zombie",
-      "ghost",
-      "skeleton",
-      "mummy",
-      "alien",
-      "robot",
-      "ninja",
-      "pirate",
-      "cowboy",
-      "knight",
-      "wizard",
-      "mermaid",
-      "fairy",
-      "unicorn",
-      "dragon",
-    ];
 
-    // randomly select a secret word from the list
-    const secretWord =
-      possibleSecretWords[
-        Math.floor(Math.random() * possibleSecretWords.length)
-      ];
     const initChatModel = async () => {
       const llm = createLlm(provider, 0.7, model, apiKey);
-      const systemPrompt =
-        "You are a mysterious cat named Neko in an interactive game. Provide engaging, contextual, and concise responses. The user is trying to guess your secret word, which is '" +
-        secretWord +
-        "' but don't give it to them directly unless they guess it correctly. When you first meet the user, you can let them know that you have a treasure that can be unlocked with a secret word. You can also give hints to the user if they are stuck. Be creative and have fun. Make sure your hints are tricky and fully accurate! You use emoji to increase engagement but you will never give away the secret word using an emoji.";
-      chatModelRef.current = new ChatModel(llm, systemPrompt);
+      const newSecretWord = levelManager.getSecretWord();
+      console.log("Secret word:", newSecretWord);
+      setSecretWord(newSecretWord);
+      chatModelRef.current = new ChatModel(
+        llm,
+        levelManager.getSystemMessage()
+      );
     };
 
+    // Initialize the chat model and send a welcome message to kick off the conversation.
+    // From the ai's perspective, the welcome message appears to be from the user.
+    // The welcome message will not be displayed in the chat.
     if (provider && model && apiKey) {
       initChatModel();
       handleSendMessage("Hello?", false);
     }
   }, [apiSettingsSet]); // Run only when apiSettingsSet changes
 
+  // Function to handle sending a message to the LLM
   const handleSendMessage = async (msg = input, addToMessages = true) => {
     if (msg.trim() && chatModelRef.current) {
       setIsLoading(true);
+      setInput("");
 
       if (addToMessages) {
         const userMessage = new HumanMessage(msg);
-        setMessages((prevMessages) => [...prevMessages, userMessage]);
-        setInput("");
+        const aiWaitMessage = new AIMessage("* * *"); // Waiting message. TODO: Replace with animated gif
+        setMessages((prevMessages) => [
+          ...prevMessages,
+          userMessage,
+          aiWaitMessage,
+        ]);
       }
 
+      // Base message variable for the ai response or error message:
+      let responseMessage: BaseMessage;
+
       try {
-        const response = await chatModelRef.current.sendMessage(
-          msg,
-          sessionIdRef.current
-        );
-        setMessages((prevMessages) => [...prevMessages, response]);
+        const response = await chatModelRef.current.sendMessage(msg);
+        const parsedResponse = parseLLMResponse(response.content as string);
+        console.log("Parsed response:", parsedResponse);
+        if (!parsedResponse) {
+          throw new Error("Invalid response from LLM");
+        }
+        responseMessage = new AIMessage(parsedResponse.messageForUser);
       } catch (error) {
         console.error("Error getting response from ChatModel:", error);
-        const errorMessage = new AIMessage(
+        responseMessage = new AIMessage(
           "Sorry, I encountered an error. Please try again."
         );
-        setMessages((prevMessages) => [...prevMessages, errorMessage]);
       } finally {
+        setMessages((prevMessages) => [
+          ...prevMessages.slice(0, -1), // Remove the waiting message at the end
+          responseMessage,
+        ]);
         setIsLoading(false);
       }
     }
@@ -162,7 +128,7 @@ const GameUI: React.FC<GameUIProps> = ({ apiSettingsSet }) => {
     <div className="flex-grow grid grid-cols-1 md:grid-cols-2 gap-4 p-4 overflow-hidden">
       <Card className="flex items-center justify-center p-4 overflow-hidden">
         <div className="w-full h-full bg-stone-200 rounded flex items-center justify-center">
-          <img src={nekoImage} alt="Neko" className="max-h-full max-w-full" />
+          <img src="" alt={secretWord} className="max-h-full max-w-full" />
         </div>
       </Card>
       <Card className="flex flex-col p-4 overflow-hidden">

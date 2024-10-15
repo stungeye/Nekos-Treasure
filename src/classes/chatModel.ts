@@ -10,7 +10,7 @@ type ChatModelOutput = BaseMessage;
 class ChatModel {
   private model: BaseChatModel;
   private chain: RunnableWithMessageHistory<ChatModelInput, ChatModelOutput>;
-  private messageHistories: Record<string, InMemoryChatMessageHistory> = {};
+  private messageHistory = new InMemoryChatMessageHistory();
 
   constructor(model: BaseChatModel, systemPrompt: string) {
     this.model = model;
@@ -25,21 +25,18 @@ class ChatModel {
 
     this.chain = new RunnableWithMessageHistory({
       runnable: chain,
-      getMessageHistory: async (sessionId: string) => {
-        if (this.messageHistories[sessionId] === undefined) {
-          this.messageHistories[sessionId] = new InMemoryChatMessageHistory();
-        }
-        return this.messageHistories[sessionId];
+      getMessageHistory: async () => {
+        return this.messageHistory;
       },
       inputMessagesKey: "input",
       historyMessagesKey: "chat_history",
     });
   }
 
-  async sendMessage(message: string, sessionId: string): Promise<BaseMessage> {
+  async sendMessage(message: string): Promise<BaseMessage> {
     const response = await this.chain.invoke(
       { input: message },
-      { configurable: { sessionId } }
+      { configurable: { sessionId: "neko-dummy-session" } }
     );
     return response;
   }
