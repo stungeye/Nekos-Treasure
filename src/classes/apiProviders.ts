@@ -12,12 +12,16 @@ export const ApiModels = {
     { name: "GPT-3.5 Turbo", value: "gpt-3.5" },
   ],
   [ApiProviders.Groq]: [
-    { name: "Groq Llama 3.1 70b Versatile", value: "llama-3.1-70b-versatile" },
-    { name: "Groq Llama 3.1 8b Instant", value: "llama-3.1-8b-instant" },
+    { name: "Groq Llama 3.3 70b Versatile", value: "llama-3.3-70b-versatile" },
+    {
+      name: "DeepSeek R1 Llama Distill",
+      value: "deepseek-r1-distill-llama-70b",
+    },
+    { name: "Qwen 2.5 32b", value: "qwen-2.5-32b" },
   ],
   [ApiProviders.Google]: [
-    { name: "Gemini 1.5 Flash", value: "gemini-1.5-flash" },
-    { name: "Gemini 1.5 Pro", value: "gemini-1.5-pro" },
+    { name: "Gemini 2.0 Flash", value: "gemini-2.0-flash" },
+    { name: "Gemini 2.0 Flash Lite", value: "gemini-2.0-flash-lite" },
   ],
   [ApiProviders.Anthropic]: [
     { name: "Claude 3.5 Sonnet", value: "claude-3-5-sonnet-20240620" },
