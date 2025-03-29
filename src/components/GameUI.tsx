@@ -19,88 +19,133 @@ const GameUI: React.FC<GameUIProps> = ({ apiSettingsSet }) => {
   const [messages, setMessages] = useState<BaseMessage[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [isChatEnabled, setIsChatEnabled] = useState(false); // Track whether chat is enabled
-  const [currentLevelConfig, setCurrentLevelConfig] = useState<LevelConfig>(
-    levelManager.getCurrentLevelConfig()
+  const [isChatEnabled, setIsChatEnabled] = useState(false);
+  const [secretWord, setSecretWord] = useState<string>(
+    levelManager.getSecretWord()
   );
-  const [secretWord, setSecretWord] = useState<string>("");
   const [attemptsRemaining, setAttemptsRemaining] = useState(
-    currentLevelConfig.attempts
+    levelManager.getCurrentLevelConfig().attempts
   );
+  const [gameOver, setGameOver] = useState(false);
+  const [waitingForNextLevel, setWaitingForNextLevel] = useState(false);
 
-  // Reference and local storage state:
+  // References and local storage:
   const store = new LocalStorageStore("neko-api-settings");
   const chatModelRef = useRef<ChatModel | null>(null);
-  const inputRef = useRef<HTMLInputElement>(null); // Create a ref for the input
-  const scrollAreaRef = useRef<HTMLDivElement>(null); // Ref for the ScrollArea
+  const inputRef = useRef<HTMLInputElement>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
 
-  // Scroll to the bottom whenever messages change
+  // Auto-scroll when messages update
   useEffect(() => {
     if (scrollAreaRef.current) {
-      scrollAreaRef.current.scrollIntoView(false); // Auto-scroll to bottom
+      scrollAreaRef.current.scrollIntoView(false);
     }
-  }, [messages]); // Run whenever `messages` array is updated
+  }, [messages]);
 
-  // After AI response, focus the input field
+  // Focus input after AI response finishes
   useEffect(() => {
     if (!isLoading && inputRef.current) {
-      inputRef.current.focus(); // Focus the input element
+      inputRef.current.focus();
     }
-  }, [isLoading]); // Focus input after loading is finished
+  }, [isLoading]);
 
-  // Initialize the chat model when API settings are set
-  useEffect(() => {
-    setMessages([]); // Clear messages when API settings are updated
-
-    if (!apiSettingsSet) {
-      setIsChatEnabled(false); // No chating if API settings are not set
-      return; // Don't initialize if API settings are not set
-    }
-
-    setIsChatEnabled(true);
+  // Helper: Clear conversation and reprompt with "Hello?"
+  const reinitializeConversation = async () => {
+    setMessages([]);
     const provider = store.get("provider");
     const model = store.get("model");
     const apiKey = store.get("apiKey");
-
-    const initChatModel = async () => {
+    if (provider && model && apiKey) {
       const llm = createLlm(provider, 0.7, model, apiKey);
-      const newSecretWord = levelManager.getSecretWord();
-      console.log("Secret word:", newSecretWord);
-      setSecretWord(newSecretWord);
       chatModelRef.current = new ChatModel(
         llm,
         levelManager.getSystemMessage()
       );
-    };
+      // Pass "true" as third argument to ignore gameOver flag during reinitialization.
+      await handleSendMessage("Hello?", false, true);
+    }
+  };
 
-    // Initialize the chat model and send a welcome message to kick off the conversation.
-    // From the ai's perspective, the welcome message appears to be from the user.
-    // The welcome message will not be displayed in the chat.
+  // Initialize chat model when API settings are complete.
+  useEffect(() => {
+    setMessages([]);
+    if (!apiSettingsSet) {
+      setIsChatEnabled(false);
+      return;
+    }
+    setIsChatEnabled(true);
+    const provider = store.get("provider");
+    const model = store.get("model");
+    const apiKey = store.get("apiKey");
+    const initChatModel = async () => {
+      const llm = createLlm(provider, 0.7, model, apiKey);
+      // Reset level manager and update UI state:
+      levelManager.resetGame();
+      const newLevelConfig = levelManager.getCurrentLevelConfig();
+      setSecretWord(levelManager.getSecretWord());
+      setAttemptsRemaining(newLevelConfig.attempts);
+      chatModelRef.current = new ChatModel(
+        llm,
+        levelManager.getSystemMessage()
+      );
+      await handleSendMessage("Hello?", false, true);
+    };
     if (provider && model && apiKey) {
       initChatModel();
-      handleSendMessage("Hello?", false);
     }
-  }, [apiSettingsSet]); // Run only when apiSettingsSet changes
+  }, [apiSettingsSet]);
 
-  // Function to handle sending a message to the LLM
-  const handleSendMessage = async (msg = input, addToMessages = true) => {
-    if (msg.trim() && chatModelRef.current) {
+  // Restart game (after a loss)
+  const restartGame = async () => {
+    levelManager.resetGame();
+    const newLevelConfig = levelManager.getCurrentLevelConfig();
+    setSecretWord(levelManager.getSecretWord());
+    setAttemptsRemaining(newLevelConfig.attempts);
+    setGameOver(false);
+    setWaitingForNextLevel(false);
+    setIsChatEnabled(true);
+    await reinitializeConversation();
+  };
+
+  // Proceed to next level (after a correct guess)
+  const proceedToNextLevel = async () => {
+    const advanced = levelManager.advanceLevel();
+    if (advanced) {
+      const newLevelConfig = levelManager.getCurrentLevelConfig();
+      setSecretWord(levelManager.getSecretWord());
+      setAttemptsRemaining(newLevelConfig.attempts);
+      setWaitingForNextLevel(false);
+      setIsChatEnabled(true);
+      await reinitializeConversation();
+    } else {
+      // No more levels; game complete.
+      setMessages([]);
+      setIsChatEnabled(false);
+      setGameOver(true);
+      setWaitingForNextLevel(false);
+      setMessages((prev) => [
+        ...prev,
+        new AIMessage("Congratulations! You've completed the game!"),
+      ]);
+    }
+  };
+
+  // Modified handleSendMessage that accepts an optional ignoreGameOver flag.
+  const handleSendMessage = async (
+    msg = input,
+    addToMessages = true,
+    ignoreGameOver = false
+  ) => {
+    // Allow sending if ignoreGameOver is true (for system reinitialization)
+    if (msg.trim() && chatModelRef.current && (ignoreGameOver || !gameOver)) {
       setIsLoading(true);
       setInput("");
-
       if (addToMessages) {
         const userMessage = new HumanMessage(msg);
-        const aiWaitMessage = new AIMessage("* * *"); // Waiting message. TODO: Replace with animated gif
-        setMessages((prevMessages) => [
-          ...prevMessages,
-          userMessage,
-          aiWaitMessage,
-        ]);
+        const aiWaitMessage = new AIMessage("* * *");
+        setMessages((prev) => [...prev, userMessage, aiWaitMessage]);
       }
-
-      // Base message variable for the ai response or error message:
       let responseMessage: BaseMessage;
-
       try {
         const response = await chatModelRef.current.sendMessage(msg);
         const parsedResponse = parseLLMResponse(response.content as string);
@@ -108,17 +153,47 @@ const GameUI: React.FC<GameUIProps> = ({ apiSettingsSet }) => {
         if (!parsedResponse) {
           throw new Error("Invalid response from LLM");
         }
-        responseMessage = new AIMessage(parsedResponse.messageForUser);
+
+        // Process attempts and level advancement.
+        if (parsedResponse.attemptMade) {
+          if (parsedResponse.correctGuess) {
+            // Correct guess: show congratulatory message and wait for user to trigger next level.
+            responseMessage = new AIMessage(parsedResponse.messageForUser);
+            setWaitingForNextLevel(true);
+            setIsChatEnabled(false);
+          } else {
+            // Incorrect guess: decrement attempts.
+            setAttemptsRemaining((prev) => {
+              const newAttempts = prev - 1;
+              if (newAttempts <= 0) {
+                setMessages((prev) => [
+                  ...prev,
+                  new AIMessage(
+                    "Game over: You have used all attempts. Restart the game to try again."
+                  ),
+                ]);
+                setIsChatEnabled(false);
+                setGameOver(true);
+              }
+              return newAttempts;
+            });
+            responseMessage = new AIMessage(parsedResponse.messageForUser);
+          }
+        } else {
+          // Not an attempt; simply show the message.
+          responseMessage = new AIMessage(parsedResponse.messageForUser);
+        }
       } catch (error) {
         console.error("Error getting response from ChatModel:", error);
         responseMessage = new AIMessage(
           "Sorry, I encountered an error. Please try again."
         );
       } finally {
-        setMessages((prevMessages) => [
-          ...prevMessages.slice(0, -1), // Remove the waiting message at the end
-          responseMessage,
-        ]);
+        // Remove the waiting placeholder and add the actual AI response.
+        setMessages((prev) => {
+          const updated = prev.slice(0, -1);
+          return [...updated, responseMessage];
+        });
         setIsLoading(false);
       }
     }
@@ -127,8 +202,29 @@ const GameUI: React.FC<GameUIProps> = ({ apiSettingsSet }) => {
   return (
     <div className="flex-grow grid grid-cols-1 md:grid-cols-2 gap-4 p-4 overflow-hidden">
       <Card className="flex items-center justify-center p-4 overflow-hidden">
-        <div className="w-full h-full bg-stone-200 rounded flex items-center justify-center">
-          <img src="" alt={secretWord} className="max-h-full max-w-full" />
+        <div className="w-full h-full bg-stone-200 rounded flex flex-col items-center justify-center">
+          <img
+            src={levelManager.getCurrentLevelConfig().imageUrl}
+            alt={secretWord}
+            className="max-h-full max-w-full mb-4"
+          />
+          <div className="text-xl font-bold">Secret Word: {secretWord}</div>
+          <div className="mt-2 text-lg">
+            Attempts Remaining: {attemptsRemaining}
+          </div>
+          <div className="mt-2 text-lg">
+            Current Level: {levelManager.getCurrentLevelIndex() + 1}
+          </div>
+          {waitingForNextLevel && (
+            <Button className="mt-4" onClick={proceedToNextLevel}>
+              Next Level
+            </Button>
+          )}
+          {gameOver && (
+            <Button className="mt-4" onClick={restartGame}>
+              Restart Game
+            </Button>
+          )}
         </div>
       </Card>
       <Card className="flex flex-col p-4 overflow-hidden">
@@ -162,7 +258,7 @@ const GameUI: React.FC<GameUIProps> = ({ apiSettingsSet }) => {
             }
             placeholder="Type your message..."
             className="flex-grow text-xl"
-            disabled={isLoading}
+            disabled={isLoading || !isChatEnabled}
           />
           <Button
             className="text-xl"

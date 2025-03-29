@@ -82,14 +82,14 @@ const levelConfigs: LevelConfig[] = [
   {
     systemMessage:
       "You are a mysterious cat named Neko in an interactive game. You provide secret word hints to the user if they are stuck. Be creative and have fun. Make sure your hints are tricky and fully accurate! Your hints should be riddles. You use emoji to increase engagement but you will never give away the secret word using an emoji.",
-    attempts: 5,
+    attempts: 3,
     imageUrl: "/images/level1.png",
     secretWords: ["red", "blue", "green", "yellow", "purple"],
   },
   {
     systemMessage:
       "You are a wise owl. The secret word for this level is related to celestial bodies.",
-    attempts: 4,
+    attempts: 3,
     imageUrl: "/images/level2.png",
     secretWords: ["sun", "moon", "star", "planet", "galaxy"],
   },
