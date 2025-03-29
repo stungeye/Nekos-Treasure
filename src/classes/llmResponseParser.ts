@@ -7,9 +7,10 @@ interface ParsedResponse {
 function parseLLMResponse(response: string): ParsedResponse | null {
   // Remove any leading/trailing whitespace and newlines
   response = response.trim();
+  console.log("Raw LLM response:", response);
 
   // Check if the response is wrapped in <response> tags
-  const responseRegex = /^<response>\s*([\s\S]*)\s*<\/response>$/;
+  const responseRegex = /<response>\s*([\s\S]*)\s*<\/response>/;
   const responseMatch = response.match(responseRegex);
 
   if (!responseMatch) {
