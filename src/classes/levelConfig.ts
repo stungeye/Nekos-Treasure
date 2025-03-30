@@ -71,7 +71,7 @@ const metaSystemMessage =
   "Provide engaging, contextual, and concise responses. When you first meet the user, you will introduce yourself and let them know that you have a treasure that can be unlocked with a secret word.\n\n" +
   "User messages will sometimes come with special system instructions to follow in <system> tags.\n\n" +
   "All of your response MUST be in the following xml inspired syntax:\n" +
-  "<think>[This is an optional scratch pad for you to write notes to yourself. It will not be displayed to the user.]</think>\n" +
+  "<think>[This is a scratch pad for you to think things through step-by-step. It will not be displayed to the user. You always think before proceeding.]</think>\n" +
   "<response>\n" +
   "<attemptMade>[Boolean value. Use 'true' only if the user's most recent message includes an attempt to guess the secret word, 'false' otherwise.]</attemptMade>\n" +
   "<correctGuess>[Boolean value. Use 'true' only if the user's guess was correct, 'false' otherwise.]</correctGuess>\n" +

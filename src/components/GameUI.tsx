@@ -31,7 +31,7 @@ const GameUI: React.FC<GameUIProps> = ({ apiSettingsSet }) => {
 
   // References and local storage:
   const store = new LocalStorageStore("neko-api-settings");
-  const chatModelRef = useRef<ChatModel>(null);
+  const chatModelRef = useRef<ChatModel | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
@@ -142,6 +142,10 @@ const GameUI: React.FC<GameUIProps> = ({ apiSettingsSet }) => {
     // Ignore if game is over but, allow if ignoreGameOver (for system reinitialization)
     if (gameOver && !ignoreGameOver) {
       console.log("game is over");
+      return;
+    }
+    if (!chatModelRef.current) {
+      console.error("Chat model is not initialized.");
       return;
     }
 
