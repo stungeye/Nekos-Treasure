@@ -7,7 +7,7 @@ import ChatModel from "@/classes/chatModel";
 import { createLlm } from "@/classes/llmFactory";
 import LocalStorageStore from "@/classes/localStorageStore";
 import { AIMessage, BaseMessage, HumanMessage } from "@langchain/core/messages";
-import { levelManager, LevelConfig } from "@/classes/levelConfig";
+import { levelManager } from "@/classes/levelConfig";
 import { parseLLMResponse } from "@/classes/llmResponseParser";
 
 interface GameUIProps {
@@ -31,7 +31,7 @@ const GameUI: React.FC<GameUIProps> = ({ apiSettingsSet }) => {
 
   // References and local storage:
   const store = new LocalStorageStore("neko-api-settings");
-  const chatModelRef = useRef<ChatModel | null>(null);
+  const chatModelRef = useRef<ChatModel>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
@@ -78,16 +78,17 @@ const GameUI: React.FC<GameUIProps> = ({ apiSettingsSet }) => {
     const model = store.get("model");
     const apiKey = store.get("apiKey");
     const initChatModel = async () => {
+      console.log("Initializing chat model...");
       const llm = createLlm(provider, 0.7, model, apiKey);
       // Reset level manager and update UI state:
       levelManager.resetGame();
-      const newLevelConfig = levelManager.getCurrentLevelConfig();
       setSecretWord(levelManager.getSecretWord());
-      setAttemptsRemaining(newLevelConfig.attempts);
+      setAttemptsRemaining(levelManager.getCurrentLevelConfig().attempts);
       chatModelRef.current = new ChatModel(
         llm,
         levelManager.getSystemMessage()
       );
+      console.log("Chat model initialized:", chatModelRef.current);
       await handleSendMessage("Hello?", false, true);
     };
     if (provider && model && apiKey) {
@@ -98,9 +99,8 @@ const GameUI: React.FC<GameUIProps> = ({ apiSettingsSet }) => {
   // Restart game (after a loss)
   const restartGame = async () => {
     levelManager.resetGame();
-    const newLevelConfig = levelManager.getCurrentLevelConfig();
     setSecretWord(levelManager.getSecretWord());
-    setAttemptsRemaining(newLevelConfig.attempts);
+    setAttemptsRemaining(levelManager.getCurrentLevelConfig().attempts);
     setGameOver(false);
     setWaitingForNextLevel(false);
     setIsChatEnabled(true);
@@ -111,9 +111,8 @@ const GameUI: React.FC<GameUIProps> = ({ apiSettingsSet }) => {
   const proceedToNextLevel = async () => {
     const advanced = levelManager.advanceLevel();
     if (advanced) {
-      const newLevelConfig = levelManager.getCurrentLevelConfig();
       setSecretWord(levelManager.getSecretWord());
-      setAttemptsRemaining(newLevelConfig.attempts);
+      setAttemptsRemaining(levelManager.getCurrentLevelConfig().attempts);
       setWaitingForNextLevel(false);
       setIsChatEnabled(true);
       await reinitializeConversation();
@@ -136,66 +135,75 @@ const GameUI: React.FC<GameUIProps> = ({ apiSettingsSet }) => {
     addToMessages = true,
     ignoreGameOver = false
   ) => {
-    // Allow sending if ignoreGameOver is true (for system reinitialization)
-    if (msg.trim() && chatModelRef.current && (ignoreGameOver || !gameOver)) {
-      setIsLoading(true);
-      setInput("");
-      if (addToMessages) {
-        const userMessage = new HumanMessage(msg);
-        const aiWaitMessage = new AIMessage("* * *");
-        setMessages((prev) => [...prev, userMessage, aiWaitMessage]);
-      }
-      let responseMessage: BaseMessage;
-      try {
-        const response = await chatModelRef.current.sendMessage(msg);
-        const parsedResponse = parseLLMResponse(response.content as string);
-        console.log("Parsed response:", parsedResponse);
-        if (!parsedResponse) {
-          throw new Error("Invalid response from LLM");
-        }
+    if (!msg.trim()) {
+      console.log("msg empty!");
+      return;
+    } // Ignore empty messages
+    // Ignore if game is over but, allow if ignoreGameOver (for system reinitialization)
+    if (gameOver && !ignoreGameOver) {
+      console.log("game is over");
+      return;
+    }
 
-        // Process attempts and level advancement.
-        if (parsedResponse.attemptMade) {
-          if (parsedResponse.correctGuess) {
-            // Correct guess: show congratulatory message and wait for user to trigger next level.
-            responseMessage = new AIMessage(parsedResponse.messageForUser);
-            setWaitingForNextLevel(true);
-            setIsChatEnabled(false);
-          } else {
-            // Incorrect guess: decrement attempts.
-            setAttemptsRemaining((prev) => {
-              const newAttempts = prev - 1;
-              if (newAttempts <= 0) {
-                setMessages((prev) => [
-                  ...prev,
-                  new AIMessage(
-                    "Game over: You have used all attempts. Restart the game to try again."
-                  ),
-                ]);
-                setIsChatEnabled(false);
-                setGameOver(true);
-              }
-              return newAttempts;
-            });
-            responseMessage = new AIMessage(parsedResponse.messageForUser);
-          }
-        } else {
-          // Not an attempt; simply show the message.
-          responseMessage = new AIMessage(parsedResponse.messageForUser);
-        }
-      } catch (error) {
-        console.error("Error getting response from ChatModel:", error);
-        responseMessage = new AIMessage(
-          "Sorry, I encountered an error. Please try again."
-        );
-      } finally {
-        // Remove the waiting placeholder and add the actual AI response.
-        setMessages((prev) => {
-          const updated = prev.slice(0, -1);
-          return [...updated, responseMessage];
-        });
-        setIsLoading(false);
+    setIsLoading(true);
+    setInput("");
+    if (addToMessages) {
+      const userMessage = new HumanMessage(msg);
+      const aiWaitMessage = new AIMessage("* * *");
+      setMessages((prev) => [...prev, userMessage, aiWaitMessage]);
+    }
+    let responseMessage: BaseMessage;
+    try {
+      const finalGuess =
+        attemptsRemaining === 1
+          ? "<system>If attemptMade is true and correctGuess is false, tell the user they have lost the game.</system>"
+          : "";
+      const msgToSend = `${msg.trim()} ${finalGuess}`;
+      console.log("Sending message to ChatModel:", msgToSend);
+      const response = await chatModelRef.current.sendMessage(msgToSend);
+      const parsedResponse = parseLLMResponse(response.content as string);
+      console.log("Parsed response:", parsedResponse);
+      if (!parsedResponse) {
+        throw new Error("Invalid response from LLM");
       }
+
+      // Process attempts and level advancement.
+      if (parsedResponse.attemptMade) {
+        if (parsedResponse.correctGuess) {
+          // Correct guess: show congratulatory message and wait for user to trigger next level.
+          responseMessage = new AIMessage(parsedResponse.messageForUser);
+          setWaitingForNextLevel(true);
+          setIsChatEnabled(false);
+        } else {
+          // Incorrect guess: decrement attempts.
+          setAttemptsRemaining((prev) => {
+            const newAttempts = prev - 1;
+            if (newAttempts <= 0) {
+              setIsChatEnabled(false);
+              setGameOver(true);
+              responseMessage = new AIMessage(parsedResponse.messageForUser);
+            } else {
+              responseMessage = new AIMessage(parsedResponse.messageForUser);
+            }
+            return newAttempts;
+          });
+        }
+      } else {
+        // Not an attempt; simply show the message.
+        responseMessage = new AIMessage(parsedResponse.messageForUser);
+      }
+    } catch (error) {
+      console.error("Error getting response from ChatModel:", error);
+      responseMessage = new AIMessage(
+        "Sorry, I encountered an error. Please try again."
+      );
+    } finally {
+      // Remove the waiting placeholder and add the actual AI response.
+      setMessages((prev) => {
+        const updated = prev.slice(0, -1);
+        return [...updated, responseMessage];
+      });
+      setIsLoading(false);
     }
   };
 
