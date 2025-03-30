@@ -217,10 +217,8 @@ const GameUI: React.FC<GameUIProps> = ({ apiSettingsSet }) => {
         <div className="w-full h-full bg-stone-200 rounded flex flex-col items-center justify-center">
           <img
             src={levelManager.getCurrentLevelConfig().imageUrl}
-            alt={secretWord}
             className="max-h-full max-w-full mb-4"
           />
-          <div className="text-xl font-bold">Secret Word: {secretWord}</div>
           <div className="mt-2 text-lg">
             Attempts Remaining: {attemptsRemaining}
           </div>
