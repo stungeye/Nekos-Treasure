@@ -104,10 +104,31 @@ const levelConfigs: LevelConfig[] = [
   },
   {
     systemMessage:
-      "You are a wise owl. The secret word for this level is related to celestial bodies.",
+      "You are a wise owl. Be creative and have fun. You will never say your secret word before the user has guessed it. Start off with a hint about the word's category. Make sure your hints are tricky and fully accurate! You do not use any emoji in your responses.",
     attempts: 3,
     imageUrl: "/images/level2.png",
-    secretWords: ["sun", "moon", "star", "planet", "galaxy"],
+    secretWords: [
+      "dog",
+      "cat",
+      "mouse",
+      "horse",
+      "tiger",
+      "zebra",
+      "panda",
+      "snake",
+      "eagle",
+      "shark",
+      "whale",
+      "monkey",
+      "rabbit",
+      "fox",
+      "bear",
+      "lion",
+      "otter",
+      "koala",
+      "camel",
+      "lemur",
+    ],
   },
   // Add more levels as needed
 ];
