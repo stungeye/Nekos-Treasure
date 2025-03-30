@@ -20,9 +20,9 @@ const GameUI: React.FC<GameUIProps> = ({ apiSettingsSet }) => {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isChatEnabled, setIsChatEnabled] = useState(false);
-  const [secretWord, setSecretWord] = useState<string>(
+  /*const [secretWord, setSecretWord] = useState<string>(
     levelManager.getSecretWord()
-  );
+  );*/
   const [attemptsRemaining, setAttemptsRemaining] = useState(
     levelManager.getCurrentLevelConfig().attempts
   );
@@ -82,7 +82,7 @@ const GameUI: React.FC<GameUIProps> = ({ apiSettingsSet }) => {
       const llm = createLlm(provider, 0.7, model, apiKey);
       // Reset level manager and update UI state:
       levelManager.resetGame();
-      setSecretWord(levelManager.getSecretWord());
+      //setSecretWord(levelManager.getSecretWord());
       setAttemptsRemaining(levelManager.getCurrentLevelConfig().attempts);
       chatModelRef.current = new ChatModel(
         llm,
@@ -99,7 +99,7 @@ const GameUI: React.FC<GameUIProps> = ({ apiSettingsSet }) => {
   // Restart game (after a loss)
   const restartGame = async () => {
     levelManager.resetGame();
-    setSecretWord(levelManager.getSecretWord());
+    // setSecretWord(levelManager.getSecretWord());
     setAttemptsRemaining(levelManager.getCurrentLevelConfig().attempts);
     setGameOver(false);
     setWaitingForNextLevel(false);
