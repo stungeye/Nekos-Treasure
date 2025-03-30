@@ -111,7 +111,7 @@ const GameUI: React.FC<GameUIProps> = ({ apiSettingsSet }) => {
   const proceedToNextLevel = async () => {
     const advanced = levelManager.advanceLevel();
     if (advanced) {
-      setSecretWord(levelManager.getSecretWord());
+      // setSecretWord(levelManager.getSecretWord());
       setAttemptsRemaining(levelManager.getCurrentLevelConfig().attempts);
       setWaitingForNextLevel(false);
       setIsChatEnabled(true);
