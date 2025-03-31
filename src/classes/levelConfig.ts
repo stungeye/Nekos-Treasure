@@ -78,10 +78,10 @@ const metaSystemMessage =
   "User messages may occasionally contain special instructions wrapped in <system> tags, which you must follow.\n\n" +
   "All of your responses MUST follow this XML-inspired syntax exactly:\n" +
   "<response>\n" +
-  "<think>[Carefully reason out your hints and ensure they logically align with the secret word. You always think before proceeding. This will not be shown to the user.]</think>\n" +
-  "<attemptMade>[Boolean value: true if the user just attempted a guess; false otherwise.]</attemptMade>\n" +
-  "<correctGuess>[Boolean value: true only if the user's guess was correct, false otherwise.]</correctGuess>\n" +
-  "<messageForUser>[Your concise, creative, engaging message here.]</messageForUser>\n" +
+  "<think>Carefully reason out your hints and ensure they logically align with the secret word. You always think before proceeding. This will not be shown to the user.</think>\n" +
+  "<attemptMade>Boolean value: true if the user just attempted a guess; false otherwise.</attemptMade>\n" +
+  "<correctGuess>Boolean value: true only if the user's guess was correct, false otherwise.</correctGuess>\n" +
+  "<messageForUser>Your concise, creative, engaging message here.</messageForUser>\n" +
   "</response>\n\n" +
   "Remember: Every hint you provide must directly reflect the secret word’s attributes. Do not use ambiguous or misleading clues. Your character details:\n";
 
@@ -202,7 +202,6 @@ const levelConfigs: LevelConfig[] = [
       "data",
       "code",
       "robot",
-      "server",
       "algorithm",
       "binary",
       "compiler",
@@ -214,7 +213,6 @@ const levelConfigs: LevelConfig[] = [
       "protocol",
       "syntax",
       "virtual",
-      "web",
     ],
   },
 ];
