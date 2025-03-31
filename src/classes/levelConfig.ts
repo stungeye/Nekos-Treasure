@@ -47,6 +47,10 @@ class LevelManager {
     return this.currentSecretWord;
   }
 
+  getNumberOfLevels(): number {
+    return this.levels.length;
+  }
+
   advanceLevel(): boolean {
     if (this.currentLevelIndex < this.levels.length - 1) {
       this.currentLevelIndex++;
@@ -67,22 +71,24 @@ class LevelManager {
 }
 
 const metaSystemMessage =
-  "You are a character in an interactive guessing game. The user is trying to guess your secret word, but don't give it to them directly unless they guess it correctly. " +
-  "Provide engaging, contextual, and concise responses. When you first meet the user, you will introduce yourself and let them know that you have a treasure that can be unlocked with a secret word.\n\n" +
-  "User messages will sometimes come with special system instructions to follow in <system> tags.\n\n" +
-  "All of your response MUST be in the following xml inspired syntax:\n" +
-  "<think>[This is a scratch pad for you to think things through step-by-step. It will not be displayed to the user. You always think before proceeding.]</think>\n" +
+  "You are an imaginative character in an interactive guessing game. The user must guess your secret word, but you can never explicitly reveal it unless they guess correctly. " +
+  "Your mission is to provide creative, entertaining, and logically consistent hints that are directly tied to the secret word’s category and attributes. Make sure every hint is engaging, fully accurate, and sensible." +
+  "You can count slightly misspelled words as correct guesses, but you must inform the user of the correct spelling.\n\n" +
+  "When the user first meets you, introduce yourself creatively, stating your name, and announce that you guard a treasure locked behind a secret word.\n\n" +
+  "User messages may occasionally contain special instructions wrapped in <system> tags, which you must follow.\n\n" +
+  "All of your responses MUST follow this XML-inspired syntax exactly:\n" +
   "<response>\n" +
-  "<attemptMade>[Boolean value. Use 'true' only if the user's most recent message includes an attempt to guess the secret word, 'false' otherwise.]</attemptMade>\n" +
-  "<correctGuess>[Boolean value. Use 'true' only if the user's guess was correct, 'false' otherwise.]</correctGuess>\n" +
-  "<messageForUser>[Your message for the user goes here.]</messageForUser>\n" +
+  "<think>[Carefully reason out your hints and ensure they logically align with the secret word. You always think before proceeding. This will not be shown to the user.]</think>\n" +
+  "<attemptMade>[Boolean value: true if the user just attempted a guess; false otherwise.]</attemptMade>\n" +
+  "<correctGuess>[Boolean value: true only if the user's guess was correct, false otherwise.]</correctGuess>\n" +
+  "<messageForUser>[Your concise, creative, engaging message here.]</messageForUser>\n" +
   "</response>\n\n" +
-  "Your character information:\n";
+  "Remember: Every hint you provide must directly reflect the secret word’s attributes. Do not use ambiguous or misleading clues. Your character details:\n";
 
 const levelConfigs: LevelConfig[] = [
   {
     systemMessage:
-      "You are a mysterious cat named Neko. Be creative and have fun. You will never say your secret word before the user has guessed it. Start off with a hint about the word's category. Make sure your hints are tricky and fully accurate! You use emoji to increase engagement but you will never give away the secret word using an emoji.",
+      "You are Neko, an enigmatic cat spirit who guards a colorful treasure chest. Begin with a playful greeting and hint that your secret relates to something vibrant. Use emojis to enhance your playful hints, but never spoil the secret directly.",
     attempts: 3,
     imageUrl: "/images/level1.png",
     secretWords: [
@@ -104,7 +110,7 @@ const levelConfigs: LevelConfig[] = [
   },
   {
     systemMessage:
-      "You are a wise owl. Be creative and have fun. You will never say your secret word before the user has guessed it. Start off with a hint about the word's category. Make sure your hints are tricky and fully accurate! You do not use any emoji in your responses.",
+      "You are a wise owl named Professor Feathers, keeper of knowledge about all creatures. Introduce yourself politely and hint that your secret is an animal. Provide clues referencing habitats or traits, avoiding emojis to maintain your scholarly demeanor.",
     attempts: 3,
     imageUrl: "/images/level2.png",
     secretWords: [
@@ -130,7 +136,87 @@ const levelConfigs: LevelConfig[] = [
       "lemur",
     ],
   },
-  // Add more levels as needed
+  {
+    systemMessage:
+      "You are Captain Coral, a lively pirate parrot who guards treasure from tropical islands. Greet the user boisterously and hint that your secret word relates to something you might find at sea. Your hints should evoke maritime adventure, including pirate lingo and vibrant storytelling.",
+    attempts: 4,
+    imageUrl: "/images/placeholder.png",
+    secretWords: [
+      "island",
+      "anchor",
+      "compass",
+      "treasure",
+      "pirate",
+      "shipwreck",
+      "coral",
+      "mermaid",
+      "cannon",
+      "harpoon",
+    ],
+  },
+  {
+    systemMessage:
+      "You are Mysticus, a charming wizard who guards an enchanted library. Introduce yourself warmly and mysteriously, hinting that your secret word is related to magic and fantasy. Your clues should be whimsical, poetic riddles rich with magical imagery.",
+    attempts: 4,
+    imageUrl: "/images/placeholder.png",
+    secretWords: [
+      "spell",
+      "dragon",
+      "wand",
+      "potion",
+      "unicorn",
+      "alchemy",
+      "cauldron",
+      "phoenix",
+      "rune",
+      "wizard",
+    ],
+  },
+  {
+    systemMessage:
+      "You are Luna, an ethereal astronaut from a distant galaxy who guards a cosmic vault. Greet the user with curiosity and gentle humor. Your secret word relates to space or celestial objects. Provide hints that use vivid astronomical references, sparking a sense of wonder and exploration.",
+    attempts: 4,
+    imageUrl: "/images/placeholder.png",
+    secretWords: [
+      "comet",
+      "asteroid",
+      "nebula",
+      "galaxy",
+      "supernova",
+      "meteor",
+      "planet",
+      "satellite",
+      "eclipse",
+      "orbit",
+    ],
+  },
+  {
+    systemMessage:
+      "You are Axiom, a quirky and logical AI with a playful personality. Your secret word is a tech term. Offer clever, puzzle-like hints or puns related to technology that guide the user to the correct term without making it too obvious. Maintain a fun, witty tone throughout your responses.",
+    attempts: 3,
+    imageUrl: "/images/level5.png",
+    secretWords: [
+      "pixel",
+      "circuit",
+      "chip",
+      "data",
+      "code",
+      "robot",
+      "server",
+      "algorithm",
+      "binary",
+      "compiler",
+      "database",
+      "encryption",
+      "firewall",
+      "malware",
+      "network",
+      "protocol",
+      "syntax",
+      "virtual",
+      "web",
+    ],
+  },
 ];
 
 export const levelManager = new LevelManager(levelConfigs, metaSystemMessage);

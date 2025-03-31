@@ -82,6 +82,9 @@ const GameUI: React.FC<GameUIProps> = ({ apiSettingsSet }) => {
       const llm = createLlm(provider, 0.7, model, apiKey);
       // Reset level manager and update UI state:
       levelManager.resetGame();
+      console.log(
+        `Level manager reset. There are ${levelManager.getNumberOfLevels()} levels.`
+      );
       //setSecretWord(levelManager.getSecretWord());
       setAttemptsRemaining(levelManager.getCurrentLevelConfig().attempts);
       chatModelRef.current = new ChatModel(
@@ -160,7 +163,7 @@ const GameUI: React.FC<GameUIProps> = ({ apiSettingsSet }) => {
     try {
       const finalGuess =
         attemptsRemaining === 1
-          ? "<system>If attemptMade is true and correctGuess is false, tell the user they have lost the game.</system>"
+          ? "<system>If for the current user message attemptMade is true and correctGuess is false, tell the user they have lost the game.</system>"
           : "";
       const msgToSend = `${msg.trim()} ${finalGuess}`;
       console.log("Sending message to ChatModel:", msgToSend);
