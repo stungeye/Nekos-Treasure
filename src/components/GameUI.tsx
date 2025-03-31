@@ -167,11 +167,16 @@ const GameUI: React.FC<GameUIProps> = ({ apiSettingsSet }) => {
           : "";
       const msgToSend = `${msg.trim()} ${finalGuess}`;
       console.log("Sending message to ChatModel:", msgToSend);
-      const response = await chatModelRef.current.sendMessage(msgToSend);
-      const parsedResponse = parseLLMResponse(response.content as string);
+      let response = await chatModelRef.current.sendMessage(msgToSend);
+      let parsedResponse = parseLLMResponse(response.content as string);
       console.log("Parsed response:", parsedResponse);
       if (!parsedResponse) {
-        throw new Error("Invalid response from LLM");
+        console.log("Invalid response from LLM, retrying...");
+        response = await chatModelRef.current.sendMessage(msgToSend);
+        parsedResponse = parseLLMResponse(response.content as string);
+        if (!parsedResponse) {
+          throw new Error("Invalid response from LLM after retry.");
+        }
       }
 
       // Process attempts and level advancement.
