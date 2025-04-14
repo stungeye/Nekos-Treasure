@@ -17,7 +17,10 @@ export const ApiModels = {
       name: "DeepSeek R1 Llama Distill",
       value: "deepseek-r1-distill-llama-70b",
     },
-    { name: "Qwen 2.5 32b", value: "qwen-2.5-32b" },
+    {
+      name: "Llama 4 17b 128e",
+      value: "meta-llama/llama-4-maverick-17b-128e-instruct",
+    },
   ],
   [ApiProviders.Google]: [
     { name: "Gemini 2.0 Flash", value: "gemini-2.0-flash" },
