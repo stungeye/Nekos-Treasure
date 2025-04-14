@@ -225,7 +225,8 @@ const GameUI: React.FC<GameUIProps> = ({ apiSettingsSet }) => {
         <div className="w-full h-full bg-stone-200 rounded flex flex-col items-center justify-center">
           <img
             src={levelManager.getCurrentLevelConfig().imageUrl}
-            className="max-h-full max-w-full mb-4"
+            className="mb-4 h-2/3 w-auto object-contain rounded"
+            alt="Level"
           />
           <div className="mt-2 text-lg">
             Attempts Remaining: {attemptsRemaining}
@@ -233,16 +234,6 @@ const GameUI: React.FC<GameUIProps> = ({ apiSettingsSet }) => {
           <div className="mt-2 text-lg">
             Current Level: {levelManager.getCurrentLevelIndex() + 1}
           </div>
-          {waitingForNextLevel && (
-            <Button className="mt-4" onClick={proceedToNextLevel}>
-              Next Level
-            </Button>
-          )}
-          {gameOver && (
-            <Button className="mt-4" onClick={restartGame}>
-              Restart Game
-            </Button>
-          )}
         </div>
       </Card>
       <Card className="flex flex-col p-4 overflow-hidden">
@@ -277,13 +268,35 @@ const GameUI: React.FC<GameUIProps> = ({ apiSettingsSet }) => {
             className="flex-grow text-xl"
             disabled={isLoading || !isChatEnabled}
           />
-          <Button
-            className="text-xl"
-            onClick={() => input !== "" && handleSendMessage()}
-            disabled={isLoading || !isChatEnabled}
-          >
-            {isLoading ? "Sending..." : "Send"}
-          </Button>
+          {isChatEnabled && (
+            <Button
+              className="text-xl"
+              onClick={() => input !== "" && handleSendMessage()}
+              disabled={isLoading || !isChatEnabled}
+            >
+              {isLoading ? "Sending..." : "Send"}
+            </Button>
+          )}
+          {waitingForNextLevel && (
+            <Button
+              className="text-xl"
+              onClick={proceedToNextLevel}
+              autoFocus
+              onKeyDown={(e) => e.key === "Enter" && proceedToNextLevel()}
+            >
+              Next Level
+            </Button>
+          )}
+          {gameOver && (
+            <Button
+              className="text-xl"
+              onClick={restartGame}
+              autoFocus
+              onKeyDown={(e) => e.key === "Enter" && restartGame()}
+            >
+              Restart Game
+            </Button>
+          )}
         </div>
       </Card>
     </div>
