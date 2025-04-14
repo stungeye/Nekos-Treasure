@@ -172,7 +172,8 @@ const GameUI: React.FC<GameUIProps> = ({ apiSettingsSet }) => {
       console.log("Parsed response:", parsedResponse);
       if (!parsedResponse) {
         console.log("Invalid response from LLM, retrying...");
-        response = await chatModelRef.current.sendMessage(msgToSend);
+        const retryMesage = `<system>Your most recent response was invalid. Retry replying to the user. Take extra care with your xml syntax.</system> User message to reply to: ${msgToSend}`;
+        response = await chatModelRef.current.sendMessage(retryMesage);
         parsedResponse = parseLLMResponse(response.content as string);
         if (!parsedResponse) {
           throw new Error("Invalid response from LLM after retry.");
