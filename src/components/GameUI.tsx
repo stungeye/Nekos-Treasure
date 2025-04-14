@@ -255,13 +255,12 @@ const GameUI: React.FC<GameUIProps> = ({ apiSettingsSet }) => {
                   msg instanceof HumanMessage ? "right" : "left"
                 }`}
               >
-                <span
+                <div
                   className={`inline-block rounded px-3 py-2 my-2 ${
                     msg instanceof HumanMessage ? "bg-blue-100" : "bg-green-100"
                   }`}
-                >
-                  {String(msg.content)}
-                </span>
+                  dangerouslySetInnerHTML={{ __html: String(msg.content) }}
+                ></div>
               </div>
             ))}
           </div>
